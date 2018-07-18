@@ -29,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
   private FunnyPostsService mPostsService;
   private PostsRecyclerViewAdapter mAdapter;
   private RecyclerView mPostsRecyclerView;
+  private Call<List<Post>> mFunnyPostsCall;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -58,33 +59,30 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void getFunnyPosts() {
-    mPostsService
-        .getPosts()
-        .enqueue(
-            new Callback<List<Post>>() {
+    mFunnyPostsCall = mPostsService.getPosts();
+    mFunnyPostsCall.enqueue(
+        new Callback<List<Post>>() {
 
-              @Override
-              public void onResponse(
-                  @NonNull Call<List<Post>> call, @NonNull Response<List<Post>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                  mAdapter.setData(response.body());
-                } else {
-                  ErrorResponse errorResponse = ErrorUtils.parseError(response);
-                  Toast.makeText(
-                          MainActivity.this,
-                          errorResponse != null
-                              ? errorResponse.getMessage()
-                              : "Unknown error occurred",
-                          Toast.LENGTH_LONG)
-                      .show();
-                }
-              }
+          @Override
+          public void onResponse(
+              @NonNull Call<List<Post>> call, @NonNull Response<List<Post>> response) {
+            if (response.isSuccessful() && response.body() != null) {
+              mAdapter.setData(response.body());
+            } else {
+              ErrorResponse errorResponse = ErrorUtils.parseError(response);
+              Toast.makeText(
+                      MainActivity.this,
+                      errorResponse != null ? errorResponse.getMessage() : "Unknown error occurred",
+                      Toast.LENGTH_LONG)
+                  .show();
+            }
+          }
 
-              @Override
-              public void onFailure(@NonNull Call<List<Post>> call, @NonNull Throwable t) {
-                Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_LONG).show();
-              }
-            });
+          @Override
+          public void onFailure(@NonNull Call<List<Post>> call, @NonNull Throwable t) {
+            Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_LONG).show();
+          }
+        });
   }
 
   @Override
@@ -113,5 +111,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     return super.onOptionsItemSelected(item);
+  }
+
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+    mFunnyPostsCall.cancel();
   }
 }

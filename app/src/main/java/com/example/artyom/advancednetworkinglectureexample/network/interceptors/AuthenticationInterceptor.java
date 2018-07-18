@@ -2,6 +2,8 @@ package com.example.artyom.advancednetworkinglectureexample.network.interceptors
 
 import android.support.annotation.NonNull;
 
+import com.example.artyom.advancednetworkinglectureexample.Storage;
+
 import java.io.IOException;
 
 import okhttp3.Interceptor;
@@ -12,17 +14,30 @@ public class AuthenticationInterceptor implements Interceptor {
 
   @Override
   public Response intercept(@NonNull Chain chain) throws IOException {
-    Request original = chain.request();
 
-    // Request customization: add request headers
-    Request.Builder requestBuilder =
-        original
-            .newBuilder()
-            .header(
-                "Authorization",
-                "token=eyJ0aWQiOiI1YjNjYzkzY2M2OGUwYjFmZjU0NWZhMTAiLCJleHAiOjE1Mzg0ODYzMzI0NDh9"); // <-- this is the important line
+    // Original Request
+    Request request = chain.request();
 
-    Request request = requestBuilder.build();
+    // if NoAuth-flag header is missing, we can add authentication
+    if (request.header("AppInternal-NoAuth") == null) {
+      // Get previously saved Authentication token
+      String token = Storage.getInstance().getToken();
+
+      // Request customization: add request headers
+      request = request
+              .newBuilder()
+              .header("Authorization", token)
+              .build();
+    } else {
+
+      // Remove internal header from request
+      request = request
+              .newBuilder()
+              .removeHeader("AppInternal-NoAuth")
+              .build();
+    }
+
+    // Continue with request
     return chain.proceed(request);
   }
 }
